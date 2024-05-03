@@ -1,0 +1,295 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <map>
+#include <set>
+using namespace std;
+// 定义文法的结构体
+struct Grammar {
+    string value; // 非终结符
+    vector<vector<string> > right; // 产生式右部
+};
+string Start;
+map<string,set<string>>FIRST,FOLLOW;
+set<string>TERMINAL,NON_TERMINAL;
+void print(vector<Grammar>& gramma){
+    int l=gramma.size();
+    for(int i=0;i<l;i++)
+    {
+        cout<<gramma[i].value<<"-->";
+        for(auto right:gramma[i].right)
+        {
+            for(auto rightt:right){
+                cout<<rightt<<' ';
+            }
+            cout<<"|";
+        }
+        cout<<"\n";
+    }
+}
+void GetStartSymbol(vector<Grammar>& grammars)
+{
+    Start=grammars[0].value;
+    return;
+}
+// 消除左递归的函数
+void RemoveLeftRecursion(vector<Grammar>& gramma) {
+    int length = gramma.size();
+    for (int i = 0; i < length; ++i) {
+        for (int j = 0; j < i; ++j) {
+            vector<vector<string>> newright;
+            for (auto& current : gramma[i].right) {
+                if (current[0] == gramma[j].value) {
+                    current.erase(current.begin());
+                    for (auto& sub : gramma[j].right) {
+                        //newright.push_back(sub + current.substr(gramma[j].value.length()));
+                        
+                        vector<string>tmp=current;
+                        
+                        for(auto it=sub.rbegin();it!=sub.rend();it++)
+                        {
+                            tmp.insert(tmp.begin(),*it);
+                        }
+                        newright.push_back(tmp);
+                        
+                    }
+                } else {newright.push_back(current);}
+                gramma[i].right=newright;
+            }
+        }
+        // print(gramma);
+        // cout<<endl;
+
+        vector<vector<string>> a;//有递归
+        vector<vector<string>> b;
+        for (auto& production : gramma[i].right) {
+            if (production[0] == gramma[i].value) {
+                a.push_back(production);
+            } else {
+                b.push_back(production);
+            }
+        }
+
+        if (!a.empty()) {
+            string newSymbol = gramma[i].value + "~";
+            for (auto& temp : b) {
+                // temp += newSymbol;
+                temp.push_back(newSymbol);
+            }
+            for (auto& temp : a) {
+                // temp = temp.substr(gramma[i].value.length()) + newSymbol;
+                temp.erase(temp.begin());
+                temp.push_back(newSymbol);
+            }
+            vector<string>t;
+            t.push_back("ε");
+            a.push_back(t);
+            gramma.push_back({newSymbol, a});
+            gramma[i].right = b;
+        }
+    }
+}
+
+
+// 提取左因子
+void extractLeftFactor(vector<Grammar>& grammars) {
+    vector<Grammar> newGrammars; // 用于存储新产生的文法
+
+    for (auto& grammar : grammars) {
+        map<string, vector<vector<string>>> prefixMap;
+
+        // 寻找共同前缀
+        for (const auto& production : grammar.right) {
+            string prefix = production[0]; // 取第一个字符作为前缀
+            prefixMap[prefix].push_back(production);
+        }
+
+        // 处理具有共同前缀的产生式
+        vector<vector<string>> newRight;
+        for (auto& entry : prefixMap) {
+            if (entry.second.size() > 1) { // 发现共同前缀
+                string newNonTerminal = grammar.value + "~"; // 创建新非终结符
+                vector<string>tmp;
+                tmp.push_back(entry.first);
+                tmp.push_back(newNonTerminal);
+                newRight.push_back(tmp); // 添加新产生式
+
+                // 将原有产生式替换为新的非终结符
+                Grammar newGrammar;
+                newGrammar.value = newNonTerminal;
+                for (auto& prod : entry.second) {
+                    if (prod.size() > 1) {
+                        prod.erase(prod.begin());
+                        newGrammar.right.push_back(prod);
+                    } else {
+                        vector<string>t;
+                        t.push_back("ε");
+                        newGrammar.right.push_back(t); // 空产生式
+                    }
+                }
+                newGrammars.push_back(newGrammar); // 添加到新文法列表
+            } else {
+                newRight.push_back(entry.second[0]); // 无需更改
+            }
+        }
+
+        // 更新原文法的产生式
+        grammar.right = newRight;
+    }
+
+    // 将所有新文法添加到原文法列表中
+    grammars.insert(grammars.end(), newGrammars.begin(), newGrammars.end());
+    
+}
+void getFIRST(vector<Grammar>& grammars)
+{
+    int len=grammars.size();
+    bool change=true;
+
+    for(auto grammar:grammars)//终结符加入first集合
+    {
+        string value=grammar.value;
+        for(auto right:grammar.right)
+        {
+            auto r=right[0];
+
+                if(TERMINAL.count(r)){
+                    FIRST[value].insert(r);
+                }
+            
+        }
+    }
+    while(change)
+    {
+        change=!change;
+        for(auto grammar:grammars)
+        {
+            string value=grammar.value;
+            bool episol=true;
+            for(auto right:grammar.right)
+            {
+                if(!FIRST[right[0]].count("ε"))episol=false;
+                for(auto rr:FIRST[right[0]])
+                {
+                    if(!FIRST[value].count(rr)){
+                        change=true;
+                        FIRST[value].insert(rr);
+                    }
+                }
+                
+            }
+            if(episol){FIRST[value].insert("ε");}
+        }
+    }
+}
+void GetTerminal(vector<Grammar>& grammars)
+{
+    int len=grammars.size();
+    for(int i=0;i<len;i++)
+    {
+        NON_TERMINAL.insert(grammars[i].value);
+    }
+    for(int i=0;i<len;i++)
+    {
+        auto grammar=grammars[i].right;
+        for(auto vec:grammar)
+        {
+            for(auto str:vec)
+            {
+                if(NON_TERMINAL.find(str)==NON_TERMINAL.end())TERMINAL.insert(str);
+            }
+        }
+    }
+}
+void GetFollow(vector<Grammar>& grammars)
+{
+    bool changed = true;
+    FOLLOW[Start].insert("$");
+
+    while (changed)
+    {
+        changed = false;
+        for(auto& grammar : grammars)
+        {
+            for(auto& production : grammar.right)
+            {
+                int productionSize = production.size();
+                for(int i = 0; i < productionSize; i++)
+                {
+                    if(NON_TERMINAL.count(production[i]) > 0)
+                    {
+                        int oldSize = FOLLOW[production[i]].size();
+                        if(i < productionSize - 1)
+                        {
+                            if(TERMINAL.count(production[i+1]) > 0)
+                            {
+                                FOLLOW[production[i]].insert(production[i+1]);
+                            }
+                            else
+                            {
+                                int j = i + 1;
+                                bool allEpsilon = true;
+                                while(j < productionSize && allEpsilon)
+                                {
+                                    allEpsilon = false;
+                                    for(auto& first : FIRST[production[j]])
+                                    {
+                                        if(first != "ε")
+                                        {
+                                            FOLLOW[production[i]].insert(first);
+                                        }
+                                        else
+                                        {
+                                            allEpsilon = true;
+                                        }
+                                    }
+                                    j++;
+                                }
+                                if(allEpsilon)
+                                {
+                                    for(auto& follow : FOLLOW[grammar.value])
+                                    {
+                                        FOLLOW[production[i]].insert(follow);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for(auto& follow : FOLLOW[grammar.value])
+                            {
+                                FOLLOW[production[i]].insert(follow);
+                            }
+                        }
+                        if(FOLLOW[production[i]].size() != oldSize)
+                        {
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+int main() {
+    // 示例文法
+    vector<Grammar> gramma = {
+        {"expr",{ {"expr", "addop","term"},{ "term"}}},
+        {"addop",{{"+"},{"-"}}},
+        {"term",{{"term","mulop","factor"},{"factor"}}},
+        {"mulop",{{"*"}}},
+        {"factor",{{"(","expr",")"},{"number"}}}
+    };
+    
+    // 调用提取左因子的函数
+    // extractLeftFactor(gramma);
+    // print(gramma);
+    GetTerminal(gramma);
+    getFIRST(gramma);
+    cout<<0;
+    return 0;
+}
+//Coding in progress
