@@ -1,5 +1,5 @@
 # LL-1-parsing
-Implement LL(1) syntax analysis in compiler theory with C++, including left recursion elimination and left factoring.
+Complete the LL(1) analysis of compiler theory, including eliminating direct left recursion, in-direct left recursion, and extracting left factors.
 输入样例：
 ![image](https://github.com/WUXI666666/LL-1-parsing/assets/128573257/30292d04-89ce-40f8-805c-06f57e417281)
 样例输入：
