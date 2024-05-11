@@ -38,125 +38,125 @@ void GetStartSymbol(vector<Grammar>& grammars)
 }
 // 消除间接左递归的函数
 // 消除间接左递归的函数
-// void RemoveLeftRecursion(vector<Grammar>& grammars) {
-//     int length = grammars.size();
-//     vector<Grammar> newgrammars; // 存储新的文法规则
-//     for (int i = 0; i < length; ++i) {
-//         for (int j = 0; j < i; ++j) {
-//             vector<vector<string>> newright;
-//             // 对于当前产生式中以前面文法规则非终结符开头的情况
-//             for (auto& current : grammars[i].right) {
-//                 if (!current.empty() && current[0] == grammars[j].value) {
-//                     current.erase(current.begin()); // 删除当前产生式中的左递归部分
-//                     // 将前面文法规则的右部添加到当前产生式的右部
-//                     for (auto& sub : grammars[j].right) {
-//                         vector<string> tmp = current;
-//                         // 将前面文法规则的右部反转并加入到当前产生式的右部
-//                         for (auto it = sub.rbegin(); it != sub.rend(); it++) {
-//                             tmp.insert(tmp.begin(), *it);
-//                         }
-//                         newright.push_back(tmp);
-//                     }
-//                 } else {
-//                     newright.push_back(current); // 如果不是以前面文法规则非终结符开头，则保持不变
-//                 }
-//             }
-//             grammars[i].right = newright; // 更新当前文法规则的右部
-//         }
+void RemoveLeftRecursion(vector<Grammar>& grammars) {
+    int length = grammars.size();
+    vector<Grammar> newgrammars; // 存储新的文法规则
+    for (int i = 0; i < length; ++i) {
+        for (int j = 0; j < i; ++j) {
+            vector<vector<string>> newright;
+            // 对于当前产生式中以前面文法规则非终结符开头的情况
+            for (auto& current : grammars[i].right) {
+                if (!current.empty() && current[0] == grammars[j].value) {
+                    current.erase(current.begin()); // 删除当前产生式中的左递归部分
+                    // 将前面文法规则的右部添加到当前产生式的右部
+                    for (auto& sub : grammars[j].right) {
+                        vector<string> tmp = current;
+                        // 将前面文法规则的右部反转并加入到当前产生式的右部
+                        for (auto it = sub.rbegin(); it != sub.rend(); it++) {
+                            tmp.insert(tmp.begin(), *it);
+                        }
+                        newright.push_back(tmp);
+                    }
+                } else {
+                    newright.push_back(current); // 如果不是以前面文法规则非终结符开头，则保持不变
+                }
+            }
+            grammars[i].right = newright; // 更新当前文法规则的右部
+        }
 
-//         // 分割含有左递归的产生式和不含左递归的产生式
-//         vector<vector<string>> withRecursion;
-//         vector<vector<string>> withoutRecursion;
-//         for (auto& production : grammars[i].right) {
-//             if (production[0] == grammars[i].value) {
-//                 withRecursion.push_back(production); // 含有左递归的产生式
-//             } else {
-//                 withoutRecursion.push_back(production); // 不含左递归的产生式
-//             }
-//         }
+        // 分割含有左递归的产生式和不含左递归的产生式
+        vector<vector<string>> withRecursion;
+        vector<vector<string>> withoutRecursion;
+        for (auto& production : grammars[i].right) {
+            if (production[0] == grammars[i].value) {
+                withRecursion.push_back(production); // 含有左递归的产生式
+            } else {
+                withoutRecursion.push_back(production); // 不含左递归的产生式
+            }
+        }
 
-//         // 如果含有左递归的产生式不为空，则进行左递归消除
-//         if (!withRecursion.empty()) {
-//             string newSymbol = grammars[i].value + "~"; // 新的非终结符
-//             for (auto& temp : withoutRecursion) {
-//                 temp.push_back(newSymbol); // 将不含左递归的产生式末尾加上新的非终结符
-//             }
-//             for (auto& temp : withRecursion) {
-//                 temp.erase(temp.begin()); // 删除左递归部分
-//                 temp.push_back(newSymbol); // 在左递归部分后加上新的非终结符
-//             }
-//             vector<string> epsilon; // 空串
-//             epsilon.push_back("#");
-//             withRecursion.push_back(epsilon); // 含有左递归的产生式最后加上空串
-//             newgrammars.push_back({newSymbol, withRecursion}); // 添加新的文法规则
-//             grammars[i].right = withoutRecursion; // 更新当前文法规则的右部，不含左递归的产生式
-//         }
-//     }
-//     // 将新的文法规则加入原文法规则集合中
-//     grammars.insert(grammars.end(), newgrammars.begin(), newgrammars.end());
-// }
+        // 如果含有左递归的产生式不为空，则进行左递归消除
+        if (!withRecursion.empty()) {
+            string newSymbol = grammars[i].value + "~"; // 新的非终结符
+            for (auto& temp : withoutRecursion) {
+                temp.push_back(newSymbol); // 将不含左递归的产生式末尾加上新的非终结符
+            }
+            for (auto& temp : withRecursion) {
+                temp.erase(temp.begin()); // 删除左递归部分
+                temp.push_back(newSymbol); // 在左递归部分后加上新的非终结符
+            }
+            vector<string> epsilon; // 空串
+            epsilon.push_back("#");
+            withRecursion.push_back(epsilon); // 含有左递归的产生式最后加上空串
+            newgrammars.push_back({newSymbol, withRecursion}); // 添加新的文法规则
+            grammars[i].right = withoutRecursion; // 更新当前文法规则的右部，不含左递归的产生式
+        }
+    }
+    // 将新的文法规则加入原文法规则集合中
+    grammars.insert(grammars.end(), newgrammars.begin(), newgrammars.end());
+}
 
 
 //消除直接左递归
 
-void RemoveLeftRecursion(vector<Grammar>& grammars) {
-    int length = grammars.size();
-    vector<Grammar> newGrammars; // 用于存储新的文法规则
+// void RemoveLeftRecursion(vector<Grammar>& grammars) {
+//     int length = grammars.size();
+//     vector<Grammar> newGrammars; // 用于存储新的文法规则
 
-    // 遍历所有文法规则
-    for (int i = 0; i < length; ++i) {
-        vector<vector<string>> directLeftRecursionProductions; // 存储直接左递归产生式
-        vector<vector<string>> remainingProductions; // 存储剩余产生式
+//     // 遍历所有文法规则
+//     for (int i = 0; i < length; ++i) {
+//         vector<vector<string>> directLeftRecursionProductions; // 存储直接左递归产生式
+//         vector<vector<string>> remainingProductions; // 存储剩余产生式
 
-        // 分离直接左递归产生式和剩余产生式
-        for (auto& production : grammars[i].right) {
-            if (!production.empty() && production[0] == grammars[i].value) {
-                directLeftRecursionProductions.push_back(production); // 存储直接左递归产生式
-            } else {
-                remainingProductions.push_back(production); // 存储剩余产生式
-            }
-        }
+//         // 分离直接左递归产生式和剩余产生式
+//         for (auto& production : grammars[i].right) {
+//             if (!production.empty() && production[0] == grammars[i].value) {
+//                 directLeftRecursionProductions.push_back(production); // 存储直接左递归产生式
+//             } else {
+//                 remainingProductions.push_back(production); // 存储剩余产生式
+//             }
+//         }
 
-        if (!directLeftRecursionProductions.empty()) {
-            // 构造新的非终结符，用于替代直接左递归
-            string newSymbol = grammars[i].value + "~";
-            vector<vector<string>> newProductions;
+//         if (!directLeftRecursionProductions.empty()) {
+//             // 构造新的非终结符，用于替代直接左递归
+//             string newSymbol = grammars[i].value + "~";
+//             vector<vector<string>> newProductions;
 
-            // 添加新产生式，替代直接左递归
-            for (auto& production : remainingProductions) {
-                production.push_back(newSymbol); // 将新的非终结符加入产生式尾部
-                newProductions.push_back(production); // 添加到新的产生式列表中
-            }
+//             // 添加新产生式，替代直接左递归
+//             for (auto& production : remainingProductions) {
+//                 production.push_back(newSymbol); // 将新的非终结符加入产生式尾部
+//                 newProductions.push_back(production); // 添加到新的产生式列表中
+//             }
 
 
 
-            // 添加新的文法规则
-            newGrammars.push_back({grammars[i].value, newProductions}); // 将原始非终结符的产生式替换为新的产生式列表
+//             // 添加新的文法规则
+//             newGrammars.push_back({grammars[i].value, newProductions}); // 将原始非终结符的产生式替换为新的产生式列表
 
-            // 构造新的非终结符产生式，去除直接左递归
-            vector<vector<string>> newLeftRecursionProductions;
-            for (auto& production : directLeftRecursionProductions) {
-                production.erase(production.begin()); // 删除非终结符本身
-                production.push_back(newSymbol); // 替换成新的非终结符
-                            // 添加空产生式
-            vector<string> epsilonProduction = {"#"}; // 创建空产生式
-            // epsilonProduction.push_back(newSymbol); // 将新的非终结符加入到空产生式尾部
-            newProductions.push_back(epsilonProduction); // 添加到新的产生式列表中
-                newLeftRecursionProductions.push_back(production); // 添加到新的产生式列表中
-                newLeftRecursionProductions.push_back(epsilonProduction);
-            }
+//             // 构造新的非终结符产生式，去除直接左递归
+//             vector<vector<string>> newLeftRecursionProductions;
+//             for (auto& production : directLeftRecursionProductions) {
+//                 production.erase(production.begin()); // 删除非终结符本身
+//                 production.push_back(newSymbol); // 替换成新的非终结符
+//                             // 添加空产生式
+//             vector<string> epsilonProduction = {"#"}; // 创建空产生式
+//             // epsilonProduction.push_back(newSymbol); // 将新的非终结符加入到空产生式尾部
+//             newProductions.push_back(epsilonProduction); // 添加到新的产生式列表中
+//                 newLeftRecursionProductions.push_back(production); // 添加到新的产生式列表中
+//                 newLeftRecursionProductions.push_back(epsilonProduction);
+//             }
 
-            // 添加新的文法规则
-            newGrammars.push_back({newSymbol, newLeftRecursionProductions}); // 添加新的文法规则到新的文法列表中
-        } else {
-            // 如果没有左递归，保持原样
-            newGrammars.push_back(grammars[i]); // 添加原始文法规则到新的文法列表中
-        }
-    }
+//             // 添加新的文法规则
+//             newGrammars.push_back({newSymbol, newLeftRecursionProductions}); // 添加新的文法规则到新的文法列表中
+//         } else {
+//             // 如果没有左递归，保持原样
+//             newGrammars.push_back(grammars[i]); // 添加原始文法规则到新的文法列表中
+//         }
+//     }
 
-    // 更新文法规则
-    grammars = newGrammars; // 将新的文法规则列表赋值给原始文法规则列表
-}
+//     // 更新文法规则
+//     grammars = newGrammars; // 将新的文法规则列表赋值给原始文法规则列表
+// }
 
 // 提取左因子
 void extractLeftFactor(vector<Grammar>& grammars) {
@@ -229,29 +229,30 @@ void getFIRST(vector<Grammar>& grammars)
 
     // 循环计算每个非终结符的FIRST集合
     while (change) {
-        change = !change; // 初始化change为false，如果有新的元素添加，则置为true
+        change = false; // 初始化change为false，如果有新的元素添加，则置为true
 
         // 遍历文法规则
         for (auto grammar : grammars) {
             string value = grammar.value; // 获取非终结符名称
-            bool episol = true; // 是否存在空串产生式标志
+           
 
             // 遍历文法规则的产生式
             for (auto right : grammar.right) {
-                // 检查产生式的第一个符号是否存在空串产生式
-                if (!FIRST[right[0]].count("#")) {
-                    episol = false; // 如果不是空串产生式，则将标志置为false
-                }
-
-                // 将FIRST集合中的符号加入当前非终结符的FIRST集合中
-                for (auto rr : FIRST[right[0]]) {
-                    if (!FIRST[value].count(rr)) { // 如果新的元素添加到FIRST集合中，则change置为true
-                        change = true;
-                        FIRST[value].insert(rr);
+                bool episol = true; // 是否存在空串产生式标志
+                for(auto rr:right)
+                {
+                    if(!FIRST[rr].count("#"))
+                    episol=false;// 至少一个符号不能推导出空串
+                    for(auto ff:FIRST[rr])
+                    {
+                        if(ff!="#"&&FIRST[value].insert(ff).second){
+                            change=true;                          
+                        }
                     }
+                    if(!episol)
+                    break;
                 }
-
-                // 如果产生式存在空串产生式，则将空串符号加入当前非终结符的FIRST集合中
+                
                 if (episol) {
                     FIRST[value].insert("#");
                 }
@@ -390,37 +391,72 @@ void buildLL1Table(vector<Grammar>& grammars) {
 
 
 // 打印LL(1)分析表
+// void printLL1Table() {
+//     // 获取所有非终结符和终结符
+//     vector<string> non_terminals(NON_TERMINAL.begin(), NON_TERMINAL.end());
+//     vector<string> terminals(TERMINAL.begin(), TERMINAL.end());
+
+//     // 打印表头
+//     cout << left<<setw(18) << " ";
+//     for (const auto& terminal : terminals) {
+//         cout << left<<setw(18) << terminal;
+//     }
+//     cout << endl;
+
+//     // 打印表格内容
+//     for (const auto& non_terminal : non_terminals) {
+        
+//         cout << left<<setw(18)<<non_terminal;
+//         for (const auto& terminal : terminals) {
+//             string tmp=non_terminal;
+//             auto production = LL1_Table[{non_terminal, terminal}];
+//             if (!production.empty()) {
+//                 tmp+="->";
+//                 // cout<<left<<setw(18)<<non_terminal;
+//                 // cout<<"->"
+//                 for (const auto& symbol : production) {
+//                     // cout<< symbol<<" ";
+//                     tmp+=symbol+" ";
+//                 }
+//                 cout<<setw(18)<<tmp;
+//                 // cout<<endl;
+//             } else {
+//                 cout << left<<setw(18) << "null";
+//             }
+//         }
+//         cout << endl;
+//     }
+// }
+// 输出LL(1)分析表的函数
 void printLL1Table() {
-    // 获取所有非终结符和终结符
-    vector<string> non_terminals(NON_TERMINAL.begin(), NON_TERMINAL.end());
-    vector<string> terminals(TERMINAL.begin(), TERMINAL.end());
+    // 为了保证输出的顺序，我们对终结符进行排序
+    vector<string> sortedTerminals(TERMINAL.begin(), TERMINAL.end());
+    sort(sortedTerminals.begin(), sortedTerminals.end());
 
     // 打印表头
-    cout << left<<setw(18) << " ";
-    for (const auto& terminal : terminals) {
-        cout << left<<setw(18) << terminal;
+    cout << setw(20) << left << "Non-Terminals" << "|";
+    for (const string& terminal : sortedTerminals) {
+        cout << setw(20) << left << terminal << "|";
     }
     cout << endl;
 
-    // 打印表格内容
-    for (const auto& non_terminal : non_terminals) {
-        
-        cout << left<<setw(18)<<non_terminal;
-        for (const auto& terminal : terminals) {
-            string tmp=non_terminal;
-            auto production = LL1_Table[{non_terminal, terminal}];
-            if (!production.empty()) {
-                tmp+="->";
-                // cout<<left<<setw(18)<<non_terminal;
-                // cout<<"->"
-                for (const auto& symbol : production) {
-                    // cout<< symbol<<" ";
-                    tmp+=symbol+" ";
+    // 用于分隔的线
+    cout << string(21 + 21 * sortedTerminals.size(), '-') << endl;
+
+    // 打印表内容
+    for (const string& non_terminal : NON_TERMINAL) {
+        cout << setw(20) << left << non_terminal << "|";
+        for (const string& terminal : sortedTerminals) {
+            auto it = LL1_Table.find({non_terminal, terminal});
+            if (it != LL1_Table.end()) {
+                string productionStr = "";
+                productionStr+=non_terminal+"->";
+                for (const string& sym : it->second) {
+                    productionStr += sym + " ";
                 }
-                cout<<setw(18)<<tmp;
-                // cout<<endl;
+                cout << setw(20) << left << productionStr << "|";
             } else {
-                cout << left<<setw(18) << "null";
+                cout << setw(20) << left << " " << "|";
             }
         }
         cout << endl;
@@ -471,9 +507,11 @@ void printStack(stack<string>s)
 {
     while(!s.empty())
     {
+        cout<<" ";
         cout<<s.top();s.pop();
     }
 }
+
 int main() {
     // 示例文法
     // vector<Grammar> grammars = {
@@ -517,22 +555,24 @@ int main() {
     }
     parsingStack.push("$");
     parsingStack.push(Start);
-    cout << setw(20) << "分析栈" <<setw(20)<< "输入" << setw(20) << "动作" << endl;
+    cout << setw(34) << left << "分析栈" << setw(34) << "输入" << setw(34) << "动作" << endl;
+    cout << string(90, '-') << endl; 
 while (!parsingStack.empty()) {
     printStack(parsingStack);
-    cout << "             ";
+    cout << setw(30 - parsingStack.size() * 2); // 根据栈内容调整间距
     printStack(inputstack);
-    cout << "              ";
+
+    cout << setw(30 -inputstack.size() * 2); // 根据栈内容调整间距
 
     // 如果栈顶非终结符和输入符号相同，则匹配，移除栈顶元素和输入栈顶元素
     if (parsingStack.top() == inputstack.top()) {
         if (parsingStack.top() == "$") {
-            cout << "接受" << endl;
+            cout << ""<<"接受" << endl;
             exit(0);
         }
         parsingStack.pop();
         inputstack.pop();
-        cout << "匹配" << endl;
+        cout << ""<<"匹配" << endl;
     } else {
         // 否则，在LL(1)分析表中查找对应的产生式
         string non_terminal = parsingStack.top();
@@ -553,14 +593,14 @@ while (!parsingStack.empty()) {
             }
 
             // 打印动作
-            cout << "用 " << non_terminal << " -> ";
+            cout << "" << non_terminal << " -> ";
             for (const auto& symbol : production) {
                 cout << symbol << " ";
             }
-            cout << "规约" << endl;
+            cout << endl;
         } else {
             // 找不到对应的产生式，输入串不符合文法规则
-            cout << "错误：找不到对应的产生式" << endl;
+            cout <<""<< "error" << endl;
             exit(0);
         }
     }
